@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user profile and premium status.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID." },
+        "email": { "type": "string", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "isPremium": { "type": "boolean", "description": "Whether the user has a premium subscription." },
+        "premiumExpiry": { "type": "string", "format": "date-time", "description": "When the premium subscription expires." },
+        "usageCount": { "type": "integer", "description": "Number of free uses." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp." }
+      },
+      "required": ["uid", "email"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Stores payment transaction details.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The user's unique ID." },
+        "phoneNumber": { "type": "string", "description": "The MoMo number used." },
+        "amount": { "type": "number", "description": "The amount paid." },
+        "plan": { "type": "string", "description": "The plan purchased." },
+        "status": { "type": "string", "description": "The status of the transaction (PENDING, SUCCESSFUL, FAILED)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Transaction creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp." }
+      },
+      "required": ["userId", "phoneNumber", "amount", "status"]
+    },
+    "HouseListing": {
+      "title": "House Listing",
+      "description": "Stores house listings posted by landlords or agents.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "description": "The UID of the landlord/agent." },
+        "ownerName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number", "description": "Price in XAF." },
+        "location": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "isPaid": { "type": "boolean", "description": "Whether the 2000 XAF fee was paid." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "sold", "hidden"] }
+      },
+      "required": ["ownerId", "title", "price", "location", "isPaid"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Stores metadata about a chat between two users regarding a listing.",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "lastTimestamp": { "type": "string", "format": "date-time" },
+        "listingTitle": { "type": "string" },
+        "studentId": { "type": "string" },
+        "landlordId": { "type": "string" }
+      },
+      "required": ["listingId", "participants", "studentId", "landlordId"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Stores messages between students and landlords.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of payment transactions."
+    },
+    "/listings/{listingId}": {
+      "schema": "HouseListing",
+      "description": "Collection of house listings."
+    },
+    "/conversations/{conversationId}": {
+      "schema": "Conversation",
+      "description": "Collection of conversations."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Collection of chat messages."
+    }
+  }
+}

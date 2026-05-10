@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Anton&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-neon-green: #00FF00;
+  --color-neon-pink: #FF00FF;
+  --color-neon-yellow: #FFFF00;
+  --color-neon-blue: #00FFFF;
+  --color-neon-purple: #9D00FF;
+  --color-brutal-black: #000000;
+  --color-gallery-white: #FFFFFF;
+  --color-claude-bg: #F9F9F8;
+  --color-claude-accent: #D97757;
+  --font-display: 'Outfit', 'Anton', sans-serif;
+  --font-body: 'Inter', 'Poppins', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-[#F0F0F0] text-brutal-black font-body selection:bg-neon-pink selection:text-white;
+  }
+}
+
+@utility brutal-border {
+  border: 3px solid var(--color-brutal-black);
+  box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+}
+
+@utility brutal-border-sm {
+  border: 2px solid var(--color-brutal-black);
+  box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+}
+
+@utility brutal-btn {
+  border: 3px solid var(--color-brutal-black);
+  box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+  background-color: var(--color-neon-green);
+  padding: 0.75rem 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover {
+    transform: translate(3px, 3px);
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
+  }
+
+  &:active {
+    transform: translate(6px, 6px);
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
+  }
+}
+
+@utility sticker {
+  @apply inline-block px-2 py-1 font-black text-[10px] uppercase tracking-tighter brutal-border-sm rotate-[-2deg] transition-transform hover:rotate-[2deg];
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+@utility bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@utility claude-card {
+  @apply bg-white border border-black/5 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+}
+
+@utility claude-bubble-user {
+  @apply bg-[#F0F0EE] rounded-[1.5rem] px-5 py-3.5 text-gray-800 font-medium;
+}
+
+@utility claude-bubble-ai {
+  @apply bg-transparent py-4 text-gray-900;
+}
+
+@utility debug-mode {
+  * {
+    outline: 1px solid rgba(255, 0, 0, 0.3) !important;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-brutal-black/20 rounded-full hover:bg-brutal-black/40 transition-colors;
+}
+
+.markdown-body h1 { @apply text-2xl font-bold mb-4 tracking-tight text-gray-900; }
+.markdown-body h2 { @apply text-xl font-bold mb-3 mt-6 text-gray-900; }
+.markdown-body h3 { @apply text-lg font-bold mb-2 mt-4 text-gray-900; }
+.markdown-body p { @apply mb-4 leading-relaxed text-gray-700; }
+.markdown-body ul { @apply list-disc pl-5 mb-4 space-y-1.5; }
+.markdown-body ol { @apply list-decimal pl-5 mb-4 space-y-1.5; }
+.markdown-body table { @apply w-full border-collapse mb-4 rounded-lg overflow-hidden border border-gray-200; }
+.markdown-body th, .markdown-body td { @apply border-b border-gray-100 p-2.5 text-left text-sm; }
+.markdown-body th { @apply bg-gray-50 font-bold text-gray-600; }
+.markdown-body blockquote { @apply border-l-4 border-claude-accent/30 pl-4 italic mb-4 text-gray-500 bg-gray-50/50 p-3 rounded-r-lg; }
+.markdown-body code { @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-claude-accent; }
+.markdown-body pre { @apply bg-gray-900 text-gray-100 p-4 rounded-xl mb-4 overflow-x-auto font-mono text-sm; }
+.markdown-body pre code { @apply bg-transparent p-0 text-gray-100; }
+
+/* GCE Mastery Specific Styles */
+.gce-mastery-content {
+  @apply font-serif leading-relaxed;
+}
+
+.gce-mastery-content h1, 
+.gce-mastery-content h2, 
+.gce-mastery-content h3 {
+  @apply font-black uppercase italic tracking-tighter border-b-2 border-brutal-black pb-2 mb-6 mt-8;
+}
+
+.gce-mastery-content p {
+  @apply mb-4 text-gray-800 font-medium leading-relaxed;
+}
+
+.gce-mastery-content strong {
+  @apply font-black text-brutal-black;
+}
+
+.gce-mastery-content li {
+  @apply mb-2 list-none relative pl-6;
+}
+
+.gce-mastery-content li::before {
+  content: "→";
+  @apply absolute left-0 text-neon-pink font-black;
+}
+
+.bg-paper {
+  background-color: #f7f3e9;
+  background-image: radial-gradient(#d1d1d1 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+}
+
+

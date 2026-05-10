@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "houessoufishier@gmail.com" && request.auth.token.email_verified == true));
+    }
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             (data.displayName == null || (data.displayName is string && data.displayName.size() < 100)) &&
+             (data.isPremium == null || data.isPremium is bool) &&
+             (data.usageCount == null || data.usageCount is int) &&
+             (data.role == null || data.role in ['student', 'admin']) &&
+             (data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidListing(data) {
+      return data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.description is string && data.description.size() < 1000 &&
+             data.price is number && data.price >= 0 &&
+             data.location is string && data.location.size() > 0 &&
+             data.isPaid is bool &&
+             (data.status == null || data.status in ['active', 'sold', 'hidden']);
+    }
+
+    function isValidConversation(data) {
+      return data.listingId is string &&
+             data.participants is list && data.participants.size() == 2 &&
+             request.auth.uid in data.participants &&
+             data.studentId is string && data.landlordId is string;
+    }
+
+    function isValidMessage(data) {
+      return data.senderId is string && data.senderId == request.auth.uid &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 1000 &&
+             data.timestamp is timestamp;
+    }
+
+    match /test_connection/{docId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && isValidUser(request.resource.data) &&
+                      (!('isPremium' in request.resource.data) || request.resource.data.isPremium == false) &&
+                      (!('role' in request.resource.data) || request.resource.data.role == 'student')) || isAdmin();
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) &&
+                      areImmutableFieldsUnchanged(['isPremium', 'premiumExpiry', 'role'])) || isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidListing(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.ownerId == request.auth.uid && isValidListing(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      allow create: if isAuthenticated() && isValidConversation(request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants && isValidMessage(request.resource.data);
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "CampusPlug",
+  "description": "The ultimate AI-powered career architect and academic plug for Cameroonian students, now with exam reminders and personalized study plans.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}
