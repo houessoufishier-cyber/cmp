@@ -11,6 +11,12 @@
   --color-gallery-white: #FFFFFF;
   --color-claude-bg: #F9F9F8;
   --color-claude-accent: #D97757;
+  
+  /* Brand Colors */
+  --color-brand-navy: #1A3C6E;
+  --color-brand-green: #27AE60;
+  --color-brand-gold: #FCD116;
+
   --font-display: 'Outfit', 'Anton', sans-serif;
   --font-body: 'Inter', 'Poppins', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -20,6 +26,11 @@
   body {
     @apply bg-[#F0F0F0] text-brutal-black font-body selection:bg-neon-pink selection:text-white;
   }
+}
+
+@utility premium-blur {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 @utility brutal-border {
@@ -103,6 +114,15 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-brutal-black/20 rounded-full hover:bg-brutal-black/40 transition-colors;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .markdown-body h1 { @apply text-2xl font-bold mb-4 tracking-tight text-gray-900; }

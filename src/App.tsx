@@ -59,11 +59,15 @@ import {
   FileText,
   Download,
   Printer,
-  Share2
+  Share2,
+  PlayCircle,
+  Youtube,
+  Globe,
+  Play
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import { generateResponseStream, generateMorningPlug, verifyMarketImage, verifyStudentId, generateConcoursStrategy } from './services/geminiService';
+import { generateResponseStream, generateProResponseStream, generateMorningPlug, verifyMarketImage, verifyStudentId, generateConcoursStrategy } from './services/geminiService';
 import { cn } from './lib/utils';
 import { Toaster, toast } from 'sonner';
 import { translations, Language } from './translations';
@@ -94,6 +98,9 @@ import {
   getDownloadURL
 } from './firebase';
 import axios from 'axios';
+import { jsPDF } from "jspdf";
+import { GCE_VERIFIED_ARCHIVE } from './data/gceData';
+
 
 interface University {
   id: string;
@@ -161,7 +168,7 @@ interface MasteryBadge {
   dateEarned: Date;
 }
 
-const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }: { user: FirebaseUser | null, setActiveTab: (tab: any) => void, setPlannerView: (view: any) => void, hasPaid: boolean, t: any, language: Language }) => {
+const HomeScreen = React.memo(({ user, setActiveTab, setPlannerView, hasPaid, t, language }: { user: FirebaseUser | null, setActiveTab: (tab: any) => void, setPlannerView: (view: any) => void, hasPaid: boolean, t: any, language: Language }) => {
   const [quote, setQuote] = useState("Education is the most powerful weapon you can use to change the world. — Nelson Mandela");
   const [newsIndex, setNewsIndex] = useState(0);
   
@@ -255,7 +262,7 @@ const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }
           <div className="absolute -right-8 -top-8 w-24 h-24 bg-neon-blue/10 rounded-full blur-2xl" />
           <div className="w-16 h-16 brutal-border bg-neon-blue flex items-center justify-center text-2xl font-black text-white shrink-0 overflow-hidden">
             {user?.photoURL ? (
-              <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
             ) : (
               user?.displayName?.charAt(0) || 'C'
             )}
@@ -285,13 +292,13 @@ const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }
         <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 opacity-40">{t.home.quickAccess}</h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { id: 'gce', label: t.nav.gce, icon: <BookOpen />, color: 'bg-[#007A5E] text-white' },
-            { id: 'planner', view: 'reading', label: t.home.aiTimetable, icon: <Clock />, color: 'bg-neon-green text-brutal-black' },
+            { id: 'universities', label: t.nav.universities, icon: <GraduationCap />, color: 'bg-neon-blue text-white' },
             { id: 'market', label: t.nav.market, icon: <ShoppingBag />, color: 'bg-[#CE1126] text-white' },
-            { id: 'compass', label: t.nav.concours, icon: <Compass />, color: 'bg-[#FCD116] text-brutal-black' },
-            { id: 'hustle', label: t.home.sideHustles, icon: <Briefcase />, color: 'bg-orange-500 text-white' },
-            { id: 'faq', label: t.common.aiMentor, icon: <Zap />, color: 'bg-purple-600 text-white' },
+            { id: 'saved', label: t.nav.saved, icon: <Heart />, color: 'bg-neon-pink text-white' },
+            { id: 'faq', label: "Need a Plug?", icon: <Zap />, color: 'bg-purple-600 text-white' },
+            { id: 'gce', label: t.nav.gce, icon: <BookOpen />, color: 'bg-[#007A5E] text-white' },
             { id: 'planner', view: 'timetable', label: t.home.examPlanner, icon: <Calendar />, color: 'bg-teal-500 text-white' },
+            { id: 'compass', label: t.nav.concours, icon: <Compass />, color: 'bg-[#FCD116] text-brutal-black' },
             { id: 'housing', label: t.nav.housing, icon: <Home />, color: 'bg-[#1A3C6E] text-white' }
           ].map((module) => (
             <motion.button
@@ -312,6 +319,63 @@ const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }
               <span className="text-[9px] font-black uppercase tracking-tighter text-center leading-tight">{module.label}</span>
             </motion.button>
           ))}
+        </div>
+      </section>
+
+      {/* Mastery Hubs */}
+      <section className="space-y-4">
+        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Discovery & Mastery Hubs</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            onClick={() => setActiveTab('homework')}
+            className="brutal-border bg-white p-6 flex flex-col justify-between space-y-4 cursor-pointer relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-3">
+              <Zap size={24} className="text-brand-green group-hover:scale-125 transition-transform" />
+            </div>
+            <div className="space-y-1">
+              <h5 className="text-xl font-black uppercase italic tracking-tighter text-brand-green">{t.hubs.homework.title}</h5>
+              <p className="text-[10px] font-bold text-gray-400 uppercase leading-tight italic">{t.hubs.homework.subtitle}</p>
+            </div>
+            <div className="bg-gray-50 brutal-border-sm p-3 text-[9px] font-black uppercase tracking-widest text-center group-hover:bg-brand-green group-hover:text-white transition-colors">
+              Solve Now
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            onClick={() => setActiveTab('cbt')}
+            className="brutal-border bg-white p-6 flex flex-col justify-between space-y-4 cursor-pointer relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-3">
+              <Timer size={24} className="text-brand-gold group-hover:scale-125 transition-transform" />
+            </div>
+            <div className="space-y-1">
+              <h5 className="text-xl font-black uppercase italic tracking-tighter text-brand-gold">{t.hubs.cbt.title}</h5>
+              <p className="text-[10px] font-bold text-gray-400 uppercase leading-tight italic">{t.hubs.cbt.subtitle}</p>
+            </div>
+            <div className="bg-gray-50 brutal-border-sm p-3 text-[9px] font-black uppercase tracking-widest text-center group-hover:bg-brand-gold group-hover:text-white transition-colors">
+              Start Quiz
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            onClick={() => setActiveTab('lessons')}
+            className="brutal-border bg-white p-6 flex flex-col justify-between space-y-4 cursor-pointer relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-3">
+              <PlayCircle size={24} className="text-brand-navy group-hover:scale-125 transition-transform" />
+            </div>
+            <div className="space-y-1">
+              <h5 className="text-xl font-black uppercase italic tracking-tighter text-brand-navy">{t.hubs.lessons.title}</h5>
+              <p className="text-[10px] font-bold text-gray-400 uppercase leading-tight italic">{t.hubs.lessons.subtitle}</p>
+            </div>
+            <div className="bg-gray-50 brutal-border-sm p-3 text-[9px] font-black uppercase tracking-widest text-center group-hover:bg-brand-navy group-hover:text-white transition-colors">
+              Watch Lessons
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -358,7 +422,7 @@ const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }
               className="brutal-border-sm bg-white p-3 flex items-center gap-4 cursor-pointer"
             >
               <div className="w-12 h-12 bg-gray-100 brutal-border-sm overflow-hidden shrink-0">
-                <img src={`https://picsum.photos/seed/item${i}/100/100`} alt="Item" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={`https://picsum.photos/seed/item${i}/100/100`} alt="Item" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
               </div>
               <div className="flex-1 min-w-0">
                 <h5 className="font-black uppercase text-xs truncate">Student Laptop - Core i7</h5>
@@ -387,7 +451,880 @@ const HomeScreen = ({ user, setActiveTab, setPlannerView, hasPaid, t, language }
       </footer>
     </div>
   );
-};
+});
+
+const AIStudyAssistantScreen = React.memo(({ user, hasPaid, t, language }: { user: FirebaseUser | null, hasPaid: boolean, t: any, language: Language }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [sessionUsage, setSessionUsage] = useState(0);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSend = async (text: string = input) => {
+    if (!text.trim() || isLoading) return;
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: text,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    setSessionUsage(prev => prev + 1);
+
+    try {
+      const history = messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      const systemPrompt = `You are CampBot — the AI study assistant for CampusPlug, built for Cameroonian university and GCE students. You:
+- Answer academic questions in ${language === 'en' ? 'English' : 'French'} (match the student's language automatically)
+- Know the GCE O/L and A/L Cameroon syllabus
+- Know the Licence/Master programs at University of Yaoundé
+- Give step-by-step explanations like a patient tutor
+- Use simple language appropriate for ages 16–28
+- Encourage students with positive affirmations
+- Never give answers without explaining the method
+- For essay questions: give structure + example paragraphs
+- For math: show full working step by step
+Keep responses concise but complete. Be warm and motivating — like a brilliant older sibling who loves to teach.`;
+
+      let fullResponse = "";
+      const response = await generateResponseStream(text, history, undefined, undefined, undefined, systemPrompt);
+      for await (const chunk of response) {
+        const text = chunk.text;
+        fullResponse += text;
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last && last.role === 'assistant') {
+            return [...prev.slice(0, -1), { ...last, content: fullResponse }];
+          } else {
+            return [...prev, { id: 'bot-' + Date.now(), role: 'assistant', content: fullResponse, timestamp: new Date() }];
+          }
+        });
+      }
+    } catch (error) {
+      toast.error(t.common.error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const starterPrompts = [
+    t.hubs.assistant.starter1,
+    t.hubs.assistant.starter2,
+    t.hubs.assistant.starter3,
+    t.hubs.assistant.starter4
+  ];
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-180px)] max-w-4xl mx-auto brutal-border bg-white overflow-hidden">
+      <div className="bg-brand-navy p-4 flex items-center justify-between border-b-4 border-brutal-black">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-brand-gold rounded-full brutal-border-sm flex items-center justify-center rotate-3 overflow-hidden">
+            <Zap size={20} className="text-brand-navy" fill="currentColor" />
+          </div>
+          <div>
+            <h3 className="text-lg font-black uppercase italic tracking-tighter text-white leading-none">CampBot AI</h3>
+            <p className="text-[10px] font-black uppercase text-brand-gold mt-1 tracking-widest">{t.hubs.assistant.subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={cn(
+            "px-2 py-1 text-[8px] font-black uppercase brutal-border-sm",
+            hasPaid ? "bg-brand-green text-white" : "bg-brand-gold text-brand-navy"
+          )}>
+            {hasPaid ? "PREMIUM" : `${10 - sessionUsage} FREE REMAINING`}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gray-50" ref={scrollRef}>
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center space-y-6 text-center px-6">
+            <div className="w-24 h-24 bg-brand-gold/10 rounded-full flex items-center justify-center brutal-border-sm rotate-6">
+              <MessageSquare size={48} className="text-brand-navy" />
+            </div>
+            <div>
+              <h4 className="text-xl font-black uppercase italic tracking-tighter">{t.home.welcome} {user?.displayName?.split(' ')[0] || "Scholar"}!</h4>
+              <p className="text-xs font-bold text-gray-400 mt-1 uppercase">How can CampBot plug you today?</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+              {starterPrompts.map((prompt, i) => (
+                <button 
+                  key={i}
+                  onClick={() => handleSend(prompt)}
+                  className="brutal-border-sm bg-white p-3 text-[10px] font-black uppercase italic hover:bg-brand-gold transition-colors text-left"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m) => (
+          <motion.div 
+            key={m.id}
+            initial={{ opacity: 0, x: m.role === 'user' ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className={cn(
+              "flex flex-col max-w-[85%]",
+              m.role === 'user' ? "ml-auto items-end" : "mr-auto items-start"
+            )}
+          >
+            <div className={cn(
+              "p-4 brutal-border-sm text-sm font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+              m.role === 'user' ? "bg-brand-navy text-white" : "bg-white text-brutal-black"
+            )}>
+              <div className="markdown-body text-inherit">
+                <ReactMarkdown>{m.content}</ReactMarkdown>
+              </div>
+            </div>
+            <span className="text-[8px] font-black uppercase mt-1 opacity-40">
+              {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </motion.div>
+        ))}
+        {isLoading && (
+          <div className="flex items-center gap-2 text-brand-navy">
+            <RefreshCw size={14} className="animate-spin" />
+            <span className="text-[10px] font-black uppercase italic tracking-widest">CampBot is thinking...</span>
+          </div>
+        )}
+      </div>
+
+      <PremiumGate hasPaid={hasPaid} freeLimit={10} usageCount={sessionUsage} onUpgrade={() => {}} t={t}>
+        <div className="p-4 bg-white border-t-4 border-brutal-black">
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask anything..."
+              className="flex-1 brutal-border-sm p-3 text-sm font-black outline-none focus:ring-4 focus:ring-brand-gold"
+            />
+            <button 
+              onClick={() => handleSend()}
+              disabled={isLoading || !input.trim()}
+              className="brutal-btn bg-brand-gold text-brand-navy px-6"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+      </PremiumGate>
+    </div>
+  );
+});
+
+const HomeworkSolverScreen = React.memo(({ hasPaid, t, language }: { hasPaid: boolean, t: any, language: Language }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [question, setQuestion] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const [imageMime, setImageMime] = useState<string | null>(null);
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [usageCount, setUsageCount] = useState(0);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setImage(base64);
+        setImageMime(file.type);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const solveHomework = async () => {
+    if (!question.trim() && !image) return;
+    setIsLoading(true);
+    setAnswer(null);
+
+    try {
+      const systemPrompt = `You are a helpful academic tutor for Cameroonian university and GCE students. Answer clearly, step by step, in ${language === 'en' ? 'English' : 'French'}. Always explain the WHY behind the answer, not just the result. For math: show full working step by step. Be warm and motivating.`;
+      let fullText = question || "Please solve the problem in this image.";
+      
+      const imageData = image ? {
+        data: image.split(',')[1],
+        mimeType: imageMime || 'image/jpeg'
+      } : undefined;
+
+      const response = await generateResponseStream(fullText, [], undefined, imageData, undefined, systemPrompt);
+      for await (const chunk of response) {
+        const text = chunk.text;
+        setAnswer(prev => (prev || '') + text);
+      }
+      
+      setUsageCount(prev => prev + 1);
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      toast.error(t.common.error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="brutal-border bg-white p-6 md:p-10 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="bg-brand-navy p-3 brutal-border-sm rotate-[-3deg]">
+            <HelpCircle size={32} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.homework.title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">{t.hubs.homework.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={fileInputRef} 
+            className="hidden" 
+            onChange={handleImageUpload}
+          />
+          
+          <div className="relative">
+            <textarea 
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              className="w-full h-40 brutal-border p-4 text-sm font-black outline-none focus:ring-4 focus:ring-brand-green bg-gray-50 italic"
+              placeholder={t.hubs.homework.placeholder}
+            />
+            {image && (
+              <div className="absolute top-2 right-2 group">
+                <img src={image} alt="Preview" className="w-20 h-20 object-cover brutal-border-sm" />
+                <button 
+                  onClick={() => { setImage(null); setImageMime(null); }}
+                  className="absolute -top-2 -right-2 bg-neon-pink text-white p-1 rounded-full brutal-border-sm"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 brutal-btn bg-white text-brand-navy py-4 text-xs"
+            >
+              <Camera size={18} />
+              {image ? "Change Photo" : t.hubs.homework.snapPhoto}
+            </button>
+            <button 
+              onClick={solveHomework}
+              disabled={isLoading || (!question.trim() && !image)}
+              className="flex-[2] brutal-btn bg-brand-green text-white py-4 text-xs flex items-center justify-center gap-2 shadow-[8px_8px_0px_0px_#1A3C6E]"
+            >
+              <Zap size={18} className={cn(isLoading && "animate-spin")} />
+              {t.hubs.homework.askGemini}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <PremiumGate hasPaid={hasPaid} freeLimit={3} usageCount={usageCount} onUpgrade={() => {}} t={t}>
+        {answer && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="brutal-border bg-white p-6 md:p-10 space-y-6 border-l-[12px] border-l-brand-green"
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="text-xl font-black uppercase italic tracking-tighter text-brand-green">AI Solution & Step-by-Step</h4>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(answer);
+                  toast.success("Solution copied!");
+                }}
+                className="p-2 brutal-border-sm bg-gray-100"
+              >
+                <Download size={16} />
+              </button>
+            </div>
+            <div className="markdown-body p-4 bg-gray-50 brutal-border-sm italic">
+              <ReactMarkdown>{answer}</ReactMarkdown>
+            </div>
+            <div className="flex justify-center pt-4">
+              <button className="brutal-btn bg-brand-navy text-white px-8 py-4">
+                <User size={18} />
+                {t.hubs.homework.askHuman}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </PremiumGate>
+    </div>
+  );
+});
+
+const CBTEngine = React.memo(({ hasPaid, t, language }: { hasPaid: boolean, t: any, language: Language }) => {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [isFinished, setIsFinished] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const [score, setScore] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Mock data for demo, in real app would fetch from Firestore /pastQuestions
+    const mockQuestions = [
+      {
+        id: '1',
+        question: language === 'en' ? 'What is the powerhouse of the cell?' : 'Quelle est la centrale énergétique de la cellule ?',
+        options: language === 'en' ? ['Nucleus', 'Mitochondria', 'Ribosome', 'Golgi'] : ['Noyau', 'Mitochondrie', 'Ribosome', 'Appareil de Golgi'],
+        correctAnswer: 1,
+        explanation: language === 'en' ? 'Mitochondria generate most of the chemical energy needed to power the cell.' : 'Les mitochondries génèrent la majeure partie de l\'énergie chimique nécessaire au fonctionnement de la cellule.'
+      },
+      {
+        id: '2',
+        question: language === 'en' ? 'Who is the president of Cameroon?' : 'Qui est le président du Cameroun ?',
+        options: ['Paul Biya', 'Maurice Kamto', 'Ni John Fru Ndi', 'Joshua Osih'],
+        correctAnswer: 0,
+        explanation: 'Paul Biya has been the President of Cameroon since 6 November 1982.'
+      }
+    ];
+    setQuestions(mockQuestions);
+  }, [language]);
+
+  useEffect(() => {
+    if (timeLeft > 0 && !isFinished) {
+      const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+      return () => clearInterval(timer);
+    } else if (timeLeft === 0) {
+      setIsFinished(true);
+    }
+  }, [timeLeft, isFinished]);
+
+  const handleFinish = () => {
+    let finalScore = 0;
+    questions.forEach((q, idx) => {
+      if (answers[idx] === q.correctAnswer) finalScore++;
+    });
+    setScore(finalScore);
+    setIsFinished(true);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (isFinished) {
+    const percentage = (score / questions.length) * 100;
+    return (
+      <div className="max-w-2xl mx-auto brutal-border bg-white p-8 space-y-8 text-center">
+        <div className="flex justify-center">
+          <div className="w-24 h-24 rounded-full brutal-border-sm flex items-center justify-center bg-brand-gold rotate-6">
+            <Trophy size={40} className="text-brand-navy" />
+          </div>
+        </div>
+        <div>
+          <h3 className="text-4xl font-black uppercase italic tracking-tighter">{t.hubs.cbt.score}: {score}/{questions.length}</h3>
+          <p className="text-lg font-bold text-gray-500 uppercase mt-2">{percentage}% Mastery</p>
+        </div>
+
+        <div className="space-y-4 text-left">
+          {questions.map((q, idx) => (
+            <div key={idx} className={cn(
+              "p-4 brutal-border-sm",
+              answers[idx] === q.correctAnswer ? "bg-brand-green/10" : "bg-red-50"
+            )}>
+              <p className="font-black text-sm uppercase leading-tight">{q.question}</p>
+              <p className="text-xs mt-2">
+                <span className="font-black uppercase">Your choice:</span> {q.options[answers[idx] ?? -1] || 'None'}
+              </p>
+              {answers[idx] !== q.correctAnswer && (
+                <p className="text-xs text-red-600 mt-1">
+                  <span className="font-black uppercase">Correct:</span> {q.options[q.correctAnswer]}
+                </p>
+              )}
+              <div className="mt-3 p-3 bg-white/50 text-[10px] italic border-t border-dashed border-brutal-black/10">
+                {q.explanation}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-4">
+          <button onClick={() => { setIsFinished(false); setCurrentIdx(0); setAnswers({}); setTimeLeft(30 * 60); }} className="flex-1 brutal-btn bg-white">
+            <RefreshCw size={18} />
+            {t.hubs.cbt.tryAgain}
+          </button>
+          <button className="flex-1 brutal-btn bg-brand-navy text-white">
+            <Share2 size={18} />
+            {t.hubs.cbt.shareScore}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-brand-gold p-3 brutal-border-sm">
+            <Timer size={32} className="text-brand-navy" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.cbt.title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">{t.hubs.cbt.subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="text-right">
+            <p className="text-[8px] font-black uppercase opacity-40">{t.hubs.cbt.timer}</p>
+            <p className={cn("text-2xl font-black font-mono", timeLeft < 300 ? "text-red-500 animate-pulse" : "text-brand-navy")}>{formatTime(timeLeft)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[8px] font-black uppercase opacity-40">Progress</p>
+            <p className="text-2xl font-black">{currentIdx + 1}/{questions.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="brutal-border bg-white overflow-hidden">
+        <div className="bg-brand-navy text-white p-6 md:p-10">
+          <h4 className="text-xl md:text-2xl font-black uppercase italic italic tracking-tighter leading-relaxed">
+            {questions[currentIdx]?.question}
+          </h4>
+        </div>
+
+        <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {questions[currentIdx]?.options.map((option: string, i: number) => (
+            <button 
+              key={i}
+              onClick={() => setAnswers({...answers, [currentIdx]: i})}
+              className={cn(
+                "p-4 brutal-border-sm text-left text-xs font-black uppercase tracking-widest transition-all",
+                answers[currentIdx] === i ? "bg-brand-gold translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-gray-50"
+              )}
+            >
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "w-6 h-6 brutal-border-sm flex items-center justify-center text-[10px]",
+                  answers[currentIdx] === i ? "bg-brand-navy text-white" : "bg-gray-100"
+                )}>
+                  {String.fromCharCode(65 + i)}
+                </div>
+                {option}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6 bg-gray-50 border-t-2 border-brutal-black flex justify-between">
+          <button 
+            disabled={currentIdx === 0}
+            onClick={() => setCurrentIdx(prev => prev - 1)}
+            className="brutal-btn bg-white disabled:opacity-50"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
+          {currentIdx === questions.length - 1 ? (
+            <button onClick={handleFinish} className="brutal-btn bg-brand-green text-white">
+              <CheckCircle size={18} />
+              {t.common.finish}
+            </button>
+          ) : (
+            <button onClick={() => setCurrentIdx(prev => prev + 1)} className="brutal-btn bg-brand-navy text-white">
+              Next
+              <ArrowRight size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const VideoLessonsScreen = React.memo(({ hasPaid, t, language }: { hasPaid: boolean, t: any, language: Language }) => {
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [filter, setFilter] = useState('All');
+  const subjects = ['All', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Literature', 'History'];
+
+  useEffect(() => {
+    // Mock library
+    setLessons([
+      { id: '1', title: 'Calculus: Differentiation Rules', subject: 'Mathematics', duration: '12:45', youtubeId: 'WvUv_S04D48', isFree: true, thumbnail: 'https://picsum.photos/seed/math1/400/225' },
+      { id: '2', title: 'Newton\'s Laws of Motion', subject: 'Physics', duration: '15:20', youtubeId: 'kKKM8Y-u7ds', isFree: false, thumbnail: 'https://picsum.photos/seed/phys1/400/225' },
+      { id: '3', title: 'Organic Chemistry: Alkanes', subject: 'Chemistry', duration: '10:10', youtubeId: '2z3_9zR3IeM', isFree: true, thumbnail: 'https://picsum.photos/seed/chem1/400/225' },
+      { id: '4', title: 'Cell Structure & Function', subject: 'Biology', duration: '18:30', youtubeId: '8IlzKri08t0', isFree: false, thumbnail: 'https://picsum.photos/seed/bio1/400/225' },
+    ]);
+  }, []);
+
+  const filteredLessons = filter === 'All' ? lessons : lessons.filter(l => l.subject === filter);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="brutal-border bg-brand-navy p-8 md:p-12 text-white relative overflow-hidden">
+        <div className="absolute right-0 top-0 opacity-10 rotate-12 bg-white w-64 h-64 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4">
+            <div className="sticker bg-brand-gold text-brand-navy border-none shadow-none">ULesson Inspired 🔌</div>
+            <h3 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.lessons.title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-gold">{t.hubs.lessons.subtitle}</p>
+          </div>
+          <div className="flex gap-4">
+            <div className="brutal-border-sm bg-white/10 p-4 text-center">
+              <p className="text-2xl font-black">250+</p>
+              <p className="text-[8px] font-black uppercase opacity-60">Videos</p>
+            </div>
+            <div className="brutal-border-sm bg-brand-gold p-4 text-center text-brand-navy">
+              <p className="text-2xl font-black">4.9</p>
+              <p className="text-[8px] font-black uppercase opacity-60">Rating</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex overflow-x-auto gap-3 pb-4 custom-scrollbar">
+        {subjects.map(s => (
+          <button 
+            key={s}
+            onClick={() => setFilter(s)}
+            className={cn(
+              "px-6 py-3 brutal-border-sm text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all",
+              filter === s ? "bg-brand-green text-white" : "bg-white hover:bg-gray-50"
+            )}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredLessons.map((lesson) => (
+          <motion.div 
+            key={lesson.id}
+            whileHover={{ y: -6 }}
+            className="group brutal-border bg-white overflow-hidden flex flex-col cursor-pointer"
+          >
+            <div className="aspect-video relative overflow-hidden bg-gray-100">
+              <img src={lesson.thumbnail} alt={lesson.title} className="w-full h-full object-cover transition-transform group-hover:scale-110" referrerPolicy="no-referrer" loading="lazy" />
+              {!lesson.isFree && !hasPaid && (
+                <div className="absolute inset-0 bg-brand-navy/60 backdrop-blur-[2px] flex items-center justify-center p-6 text-center">
+                  <div className="brutal-border-sm bg-white p-2 text-[10px] font-black uppercase rotate-[-3deg]">
+                    <Zap size={14} className="inline mr-1 text-brand-gold fill-current" />
+                    Premium Only
+                  </div>
+                </div>
+              )}
+              <div className="absolute bottom-2 right-2 bg-brutal-black text-white px-2 py-1 text-[8px] font-black brutal-border-sm">
+                {lesson.duration}
+              </div>
+              <div className="absolute top-2 left-2 px-2 py-1 bg-brand-gold text-brand-navy text-[8px] font-black uppercase brutal-border-sm">
+                {lesson.subject}
+              </div>
+            </div>
+            
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <h5 className="text-lg font-black uppercase italic leading-tight group-hover:text-brand-green transition-colors">{lesson.title}</h5>
+              
+              <div className="flex gap-2">
+                <button className="flex-1 brutal-btn bg-brand-navy text-white py-2 text-[10px]">
+                  <ArrowRight size={14} />
+                  Watch
+                </button>
+                <button className="brutal-btn bg-white p-2">
+                  <Download size={14} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const FlashcardScreen = React.memo(({ hasPaid, t, language }: { hasPaid: boolean, t: any, language: Language }) => {
+  const [decks, setDecks] = useState<any[]>([]);
+  const [selectedDeck, setSelectedDeck] = useState<any | null>(null);
+  const [currentCardIdx, setCurrentCardIdx] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isStudyMode, setIsStudyMode] = useState(false);
+
+  useEffect(() => {
+    setDecks([
+      { 
+        id: '1', 
+        name: 'GCE Biology: Cells', 
+        cardCount: 15, 
+        cards: [
+          { front: 'What is the function of Mitochondria?', back: 'ATP production (energy)' },
+          { front: 'Definition of Mitosis', back: 'Cell division resulting in two identical daughter cells' },
+          { front: 'Who discovered the cell?', back: 'Robert Hooke (1665)' }
+        ] 
+      },
+      { 
+        id: '2', 
+        name: 'Law 101: Legal Systems', 
+        cardCount: 12, 
+        cards: [
+          { front: 'Common Law', back: 'Legal system based on judicial decisions (precedents)' },
+          { front: 'Civil Law', back: 'Legal system based on written codes' }
+        ] 
+      },
+    ]);
+  }, []);
+
+  if (isStudyMode && selectedDeck) {
+    const card = selectedDeck.cards[currentCardIdx];
+    return (
+      <div className="max-w-2xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <button onClick={() => setIsStudyMode(false)} className="text-xs font-black uppercase underline">
+            <ArrowLeft size={14} className="inline mr-1" />
+            Back to Decks
+          </button>
+          <div className="text-xs font-black uppercase opacity-40">
+            Card {currentCardIdx + 1} of {selectedDeck.cards.length}
+          </div>
+        </div>
+
+        <motion.div 
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="relative h-96 w-full cursor-pointer perspective-1000"
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.6, type: 'spring' }}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          {/* Front */}
+          <div className="absolute inset-0 brutal-border bg-white p-12 flex flex-col items-center justify-center text-center backface-hidden">
+            <div className="sticker bg-brand-gold text-brand-navy mb-6">QUESTION</div>
+            <h4 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight italic">
+              {card.front}
+            </h4>
+            <p className="mt-8 text-[8px] font-black uppercase opacity-40 animate-pulse">Click to Flip</p>
+          </div>
+          {/* Back */}
+          <div className="absolute inset-0 brutal-border bg-brand-navy p-12 flex flex-col items-center justify-center text-center backface-hidden" style={{ transform: 'rotateY(180deg)' }}>
+            <div className="sticker bg-brand-green text-white mb-6">ANSWER</div>
+            <h4 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight text-white italic">
+              {card.back}
+            </h4>
+            <p className="mt-8 text-[8px] font-black uppercase text-brand-gold">Click to Flip Back</p>
+          </div>
+        </motion.div>
+
+        <div className="flex gap-4">
+          <button 
+            disabled={currentCardIdx === 0}
+            onClick={() => { setCurrentCardIdx(prev => prev - 1); setIsFlipped(false); }}
+            className="flex-1 brutal-btn bg-white"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => {
+              if (currentCardIdx === selectedDeck.cards.length - 1) {
+                setIsStudyMode(false);
+                toast.success("Deck Completed!");
+              } else {
+                setCurrentCardIdx(prev => prev + 1);
+                setIsFlipped(false);
+              }
+            }}
+            className="flex-1 brutal-btn bg-brand-navy text-white text-xs"
+          >
+            {currentCardIdx === selectedDeck.cards.length - 1 ? 'Finish' : 'Next Card'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div>
+          <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.flashcards.title}</h3>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">{t.hubs.flashcards.subtitle}</p>
+        </div>
+        <button className="brutal-btn bg-brand-gold text-brand-navy px-8 py-4">
+          <Plus size={18} />
+          Create Deck
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="brutal-border bg-gray-50 border-dashed p-8 flex flex-col items-center justify-center text-center space-y-4 hover:bg-white transition-colors cursor-pointer group">
+          <div className="w-16 h-16 rounded-full bg-brand-gold/10 flex items-center justify-center brutal-border-sm rotate-6 group-hover:rotate-12 transition-transform">
+            <Sparkles size={24} className="text-brand-gold" />
+          </div>
+          <h4 className="text-lg font-black uppercase italic tracking-tighter">AI Deck Generator</h4>
+          <p className="text-[10px] font-bold text-gray-400 uppercase">Paste your notes and Gemini will build the cards</p>
+          <button className="brutal-btn bg-brand-navy text-white px-6 py-2 text-[10px]">Generate Now</button>
+        </div>
+
+        {decks.map(deck => (
+          <motion.div 
+            key={deck.id}
+            whileHover={{ rotate: 1 }}
+            className="brutal-border bg-white p-8 flex flex-col justify-between space-y-6"
+          >
+            <div className="space-y-2">
+              <div className="sticker bg-neon-purple text-white">{deck.cardCount} Cards</div>
+              <h4 className="text-2xl font-black uppercase italic tracking-tighter leading-none">{deck.name}</h4>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {[1, 2].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full brutal-border-sm bg-gray-100 flex items-center justify-center text-[8px] font-black">
+                    {i}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[8px] font-black uppercase opacity-40">150 students studying</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setSelectedDeck(deck); setCurrentCardIdx(0); setIsStudyMode(true); }}
+                className="flex-1 brutal-btn bg-brand-navy text-white py-3 text-[10px]"
+              >
+                <Zap size={14} fill="currentColor" />
+                Study
+              </button>
+              <button className="brutal-btn bg-white p-3">
+                <Share2 size={14} />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const YouTubeDiscoveryScreen = React.memo(({ t }: { t: any }) => {
+  const [videos, setVideos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    setVideos([
+      { id: '1', title: 'Organic Chemistry Roadmap', channel: 'The Organic Chemistry Tutor', views: '2.5M', thumbnail: 'https://picsum.photos/seed/yt1/600/340', url: '#' },
+      { id: '2', title: 'Physics: Forces and Motion', channel: 'CrashCourse', views: '1.2M', thumbnail: 'https://picsum.photos/seed/yt2/600/340', url: '#' },
+      { id: '3', title: 'Biology: Genetics 101', channel: 'Amoeba Sisters', views: '800K', thumbnail: 'https://picsum.photos/seed/yt3/600/340', url: '#' },
+      { id: '4', title: 'Economics: Supply and Demand', channel: 'Khan Academy', views: '3M', thumbnail: 'https://picsum.photos/seed/yt4/600/340', url: '#' },
+    ]);
+  }, []);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex items-center gap-4">
+        <div className="bg-red-600 p-3 brutal-border-sm rotate-[-2deg]">
+          <Youtube size={32} className="text-white" />
+        </div>
+        <div>
+          <h3 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.youtube.title}</h3>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">{t.hubs.youtube.subtitle}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+        {videos.map(v => (
+          <motion.div key={v.id} whileHover={{ y: -5 }} className="brutal-border bg-white overflow-hidden group">
+            <div className="aspect-video relative">
+              <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+              <div className="absolute inset-0 bg-transparent group-hover:bg-red-600/10 transition-colors flex items-center justify-center">
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center brutal-border-sm opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                  <Play size={32} fill="white" className="text-white ml-1" />
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <h4 className="text-xl font-black uppercase italic tracking-tighter leading-tight">{v.title}</h4>
+              <div className="flex justify-between items-center text-[10px] font-black uppercase opacity-60">
+                <span>{v.channel}</span>
+                <span>{v.views} views</span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const CourseDiscoveryScreen = React.memo(({ t }: { t: any }) => {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    setCourses([
+      { id: '1', title: 'Data Science Specialization', provider: 'Coursera (Johns Hopkins)', price: 'Free / Cert Paid', reviews: '4.8', link: '#' },
+      { id: '2', title: 'Introduction to Computer Science (CS50)', provider: 'edX (Harvard)', price: 'Free', reviews: '4.9', link: '#' },
+      { id: '3', title: 'Full Stack Web Development', provider: 'Udemy (Angela Yu)', price: '$12.99', reviews: '4.7', link: '#' },
+      { id: '4', title: 'Entrepreneurships in Africa', provider: 'FutureLearn', price: 'Free', reviews: '4.6', link: '#' },
+    ]);
+  }, []);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="brutal-border bg-brand-green p-8 md:p-12 text-white relative overflow-hidden">
+        <div className="absolute right-0 top-0 opacity-10 rotate-12 bg-white w-64 h-64 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-4">
+            <div className="sticker bg-brand-gold text-brand-navy border-none shadow-none">Global Learning 🌎</div>
+            <h3 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none">{t.hubs.courses.title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-gold">{t.hubs.courses.subtitle}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
+        {courses.map(course => (
+          <div key={course.id} className="brutal-border bg-white p-8 space-y-6 hover:rotate-1 transition-transform">
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black uppercase bg-gray-100 px-2 py-1 brutal-border-sm">{course.provider}</span>
+                <div className="flex items-center gap-1 text-brand-gold">
+                  <Star size={14} fill="currentColor" />
+                  <span className="text-[10px] font-black uppercase">{course.reviews}</span>
+                </div>
+              </div>
+              <h4 className="text-2xl font-black uppercase italic tracking-tighter leading-none pt-2">{course.title}</h4>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <DollarSign size={16} className="text-brand-green" />
+              <span className="text-xs font-black uppercase">{course.price}</span>
+            </div>
+
+            <button className="w-full brutal-btn bg-brand-navy text-white py-4 font-black uppercase tracking-widest text-xs">
+              Go to Course Site
+              <ArrowRight size={18} className="inline ml-2" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 const universities: University[] = [
   {
@@ -690,6 +1627,51 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 const FREE_LIMIT = 50;
 
+const PremiumGate = ({ 
+  hasPaid, 
+  freeLimit, 
+  usageCount, 
+  onUpgrade, 
+  t, 
+  children 
+}: { 
+  hasPaid: boolean, 
+  freeLimit: number, 
+  usageCount: number, 
+  onUpgrade: () => void, 
+  t: any, 
+  children: React.ReactNode 
+}) => {
+  const isLocked = !hasPaid && usageCount >= freeLimit;
+
+  return (
+    <div className="relative">
+      {children}
+      {isLocked && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center p-6 premium-blur border-4 border-dashed border-brand-navy rounded-3xl">
+          <div className="brutal-border bg-white p-8 text-center space-y-6 max-w-sm">
+            <div className="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center mx-auto brutal-border-sm rotate-3">
+              <Zap className="text-brand-navy" size={32} />
+            </div>
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter">
+              {t.common.premiumAccess}
+            </h3>
+            <p className="text-sm font-bold text-gray-500 uppercase">
+              {usageCount}/{freeLimit} {t.common.freeMember} {t.common.status}
+            </p>
+            <button 
+              onClick={onUpgrade}
+              className="w-full brutal-btn bg-neon-pink text-white py-4 font-black uppercase tracking-widest hover:rotate-1"
+            >
+              {t.common.upgradeToPro}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -850,7 +1832,7 @@ export default function App() {
   const [pendingMarketItem, setPendingMarketItem] = useState<MarketItem | null>(null);
   const [pendingHousingListing, setPendingHousingListing] = useState<any>(null);
   const [purchasingItem, setPurchasingItem] = useState<MarketItem | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'planner' | 'hustle' | 'housing' | 'gce' | 'compass' | 'market' | 'universities' | 'saved' | 'profile' | 'faq' | 'guide'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'planner' | 'hustle' | 'housing' | 'gce' | 'compass' | 'market' | 'universities' | 'saved' | 'profile' | 'faq' | 'guide' | 'homework' | 'cbt' | 'lessons' | 'flashcards' | 'youtube' | 'courses' | 'assistant'>('home');
   const [language, setLanguage] = useState<Language>('en');
   const t = translations[language];
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -900,6 +1882,13 @@ export default function App() {
     'Financial Accounting', 'Cost Accounting', 'Business Management', 'Law',
     'Information Technology'
   ].sort();
+
+  const currentYear = new Date().getFullYear();
+  const GCE_YEARS = Array.from(
+    { length: currentYear - 2015 + 1 }, 
+    (_, i) => (currentYear - i).toString()
+  );
+
   const [hustleLocation, setHustleLocation] = useState('');
   const [hustleCapital, setHustleCapital] = useState('');
   const [hustleTime, setHustleTime] = useState('');
@@ -1228,32 +2217,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [exams, isAuthReady, notificationsPermission]);
 
-  const [marketItems, setMarketItems] = useState<MarketItem[]>([
-    {
-      id: '1',
-      title: 'Calculus Textbook (A-Level)',
-      price: '5000 XAF',
-      description: 'Barely used, all pages intact. Essential for Science students.',
-      category: 'Books',
-      seller: 'Ambe Precious',
-      contact: '677889900',
-      image: 'https://picsum.photos/seed/book/400/300',
-      date: '2026-03-28',
-      isVerified: true
-    },
-    {
-      id: '2',
-      title: 'Scientific Calculator (Casio)',
-      price: '8500 XAF',
-      description: 'Works perfectly. Battery recently changed.',
-      category: 'Electronics',
-      seller: 'Fongoh Derick',
-      contact: '655443322',
-      image: 'https://picsum.photos/seed/calc/400/300',
-      date: '2026-03-27',
-      isVerified: true
-    }
-  ]);
+  const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [isPostingMarketItem, setIsPostingMarketItem] = useState(false);
   const [isVerifyingImage, setIsVerifyingImage] = useState(false);
   const [isVerifyingID, setIsVerifyingID] = useState(false);
@@ -1508,11 +2472,11 @@ export default function App() {
         [currentTabKey]: [...(prev[currentTabKey] || []), assistantMessage]
       }));
       
-      const stream = await generateResponseStream(textToSend, history, userProfile, currentImage || undefined);
+      const response = await generateResponseStream(textToSend, history, userProfile, currentImage || undefined);
       let fullResponse = '';
 
-      for await (const chunk of stream) {
-        const chunkText = chunk.text || '';
+      for await (const chunk of response) {
+        const chunkText = chunk.text;
         fullResponse += chunkText;
         setMessages(prev => ({
           ...prev,
@@ -1567,28 +2531,66 @@ export default function App() {
 
     const isPaper1 = gcePaperType.includes('Paper 1');
 
+    // Check if we have verified data for this specific request
+    const verifiedQuestions = GCE_VERIFIED_ARCHIVE.filter(q => 
+      q.year === gceYear && 
+      q.level === gceLevel && 
+      q.subject === gceSubject && 
+      (isPaper1 ? q.paperType.includes('Paper 1') : !q.paperType.includes('Paper 1'))
+    );
+
+    if (verifiedQuestions.length > 0) {
+      setIsGceViewerLoading(false);
+      let content = verifiedQuestions.map(q => {
+        if (type === 'paper') {
+          const text = language === 'en' ? q.question_en : q.question_fr;
+          let qText = `### Question ${q.questionNumber}\n${text}\n\n`;
+          const options = language === 'en' ? q.options_en : q.options_fr;
+          if (options) {
+            qText += options.map((opt, i) => `**${String.fromCharCode(65 + i)}**) ${opt}`).join('    ') + '\n\n';
+          }
+          return qText;
+        } else {
+          const explanation = language === 'en' ? q.explanation_en : q.explanation_fr;
+          return `### Solution to Question ${q.questionNumber}\n**Correct Answer:** ${q.correctAnswer || 'N/A'}\n\n**Detailed Logic:**\n${explanation}\n\n**Official Mark Scheme Breakdown:**\n${q.markScheme}\n\n--- \n\n`;
+        }
+      }).join('\n');
+
+      setGceViewerContent(content);
+      return;
+    }
+
     const prompt = type === 'paper' 
-      ? `Generate the complete official Cameroon GCE ${gceLevel} Level ${gceStream} Education ${gceSubject} ${gcePaperType} from the year ${gceYear}. 
-         CRITICAL INSTRUCTIONS: 
-         - This is a formal examination paper for the ${gceStream} Education subsystem.
-         ${isPaper1 ? "- REQUIRED: Generate EXACTLY 50 Multiple Choice Questions (MCQs). Do not skip any. Number them 1 to 50. Each must have 4 options (A, B, C, D)." : "- Include the full Section structure (Section A, B, C as applicable)."}
-         - Structure it exactly like the Cameroon GCE Board standard for ${gceStream === 'Technical' ? 'Technical/Vocational' : 'General'} education.
-         - List all questions clearly with their respective marks or numbering.
-         - Maintain the technical rigour expected for ${gceLevel} Level.`
-      : `Provide the complete, exhaustive solutions for ALL questions in the Cameroon GCE ${gceLevel} Level ${gceStream} Education ${gceSubject} ${gcePaperType} from the year ${gceYear}.
-         CRITICAL INSTRUCTIONS:
-         ${isPaper1 ? "- REQUIRED: Provide the correct answer (Letter) and a detailed technical explanation for EVERY SINGLE ONE of the 50 MCQs. Number them 1 to 50. Do not omit any question." : "- Format each solution clearly, corresponding to the questions in a standard paper. For calculations, show all intermediate steps and the final answer with units."}
-         - Include "Mastery Insights" for the most challenging questions related to ${gceSubject} (${gceStream} curriculum).
-         - Explain difficult concepts in a way a student can easily grasp.
-         - Highlight common pitfalls and examiner traps for these specific types of questions.
-         - Use a mentor-like, encouraging tone while maintaining high technical accuracy.`;
+      ? `VERBATIM TRANSCRIPT REQUEST - OFFICIAL CAMEROON GCE BOARD (CGCEBOARD.COM) ARCHIVES.
+         
+         TASK: You are to act as a 1:1 Digital Mirror. Your sole objective is to provide an EXACT, WORD-FOR-WORD, AND FULL-LENGTH transcription of the official Cameroon GCE ${gceLevel} Level ${gceStream} Education ${gceSubject} ${gcePaperType} from the year ${gceYear}, exactly as archived on the official Board website or verified past paper repositories.
+         
+         STRICT ARCHIVE PROTOCOLS: 
+         - MANDATORY GOOGLE SEARCH: Before writing, use the SEARCH tool to find the official .pdf or .doc transcript from cgceboard.com or cameroongceboard.cm. Look for the EXACT string of the ${gceYear} paper.
+         - ZERO TOLERANCE FOR SUMMARIZATION: You are forbidden from omitting a single punctuation mark, instruction, or question. 
+         - COMPLETENESS: For Paper 1, you MUST list all 50 questions. For Paper 2/3, you MUST list every subsection.
+         - FIDELITY: If the original paper has specific formatting, numbering (e.g., 1.1, 1.2), or mark allocations, replicate them exactly.
+         - NO "LLM LAZINESS": Do not use phrases like "rest of the questions are similar". You must type out the entire paper in its historical entirety.
+         - Ensure nomenclature follows the Board's standards (e.g., 'Advanced Level', 'Paper 2').`
+      : `OFFICIAL MARKING RUBRIC RECONSTRUCTION - VERIFIED ARCHIVES.
+         
+         TASK: Provide the COMPLETE AND VERBATIM official marking scheme/solution key for the Cameroon GCE ${gceLevel} Level ${gceStream} Education ${gceSubject} ${gcePaperType} from the year ${gceYear}.
+         
+         STRICT ARCHIVE PROTOCOLS:
+         - MANDATORY GOOGLE SEARCH: Find the official board-issued 'Examiner's Marking Guide' or official transcript for the ${gceYear} session.
+         - FIDELITY: The marking scheme must match the official GCE Board rubric exactly. Show the detailed 'Mark Breakdown' (e.g., 1mk for formula, 2mks for logic).
+         - FULL DOCUMENT: Provide solutions for EVERY single question and part in the paper. No exclusions.
+         - RIGOR: Use the professional, academic language expected by the Cameroon GCE Board markers.`;
 
     try {
       if (type === 'solution') {
         trackGCESolution(gceSubject, gceLevel);
       }
 
-      const stream = await generateResponseStream(prompt, [], userProfile);
+      // Use the Pro model with search grounding for maximum accuracy on official past papers
+      const stream = await generateProResponseStream(prompt, [], userProfile, [
+        { googleSearch: {} }
+      ]);
       let fullContent = '';
       
       for await (const chunk of stream) {
@@ -1602,6 +2604,69 @@ export default function App() {
       setIsViewingGce(false);
     } finally {
       setIsGceViewerLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const contentWidth = pageWidth - 2 * margin;
+
+      // Add Header Brand
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Generated by CampusPlug - Cameroon's #1 Student Hub", margin, 15);
+      doc.setTextColor(0, 0, 0);
+
+      // Add Title
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      const titleLines = doc.splitTextToSize(gceViewerTitle, contentWidth);
+      doc.text(titleLines, margin, 30);
+      
+      let y = 30 + (titleLines.length * 10);
+
+      // Add Type Subtitle
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "italic");
+      doc.text(gceViewerType === 'paper' ? 'Official Past Paper Content' : 'Official Verified Solutions', margin, y);
+      y += 15;
+
+      // Add Content
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      
+      // Basic markdown cleaning for PDF 
+      const cleanContent = gceViewerContent
+        .replace(/### /g, 'QUESTION: ')
+        .replace(/\*\*/g, '')
+        .replace(/---/g, '____________________________________________________');
+
+      const splitText = doc.splitTextToSize(cleanContent, contentWidth);
+      
+      // Page wrapping logic
+      const pageHeight = doc.internal.pageSize.getHeight();
+      for (let i = 0; i < splitText.length; i++) {
+        if (y > pageHeight - 20) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(splitText[i], margin, y);
+        y += 7;
+      }
+
+      // Save the PDF
+      const fileName = `${gceViewerTitle.replace(/\s+/g, '_')}_${gceViewerType}.pdf`;
+      doc.save(fileName);
+      
+      toast.success("PDF Downloaded successfully!", {
+        className: 'brutal-border bg-neon-green text-brutal-black font-black uppercase italic',
+      });
+    } catch (error) {
+      console.error("PDF Download error:", error);
+      toast.error("Failed to generate PDF. On est ensemble, try the Print button!");
     }
   };
 
@@ -2728,6 +3793,108 @@ Daily Study Duration: ${studyDuration} hours
             <Briefcase size={18} />
             {t.hustle.title}
           </button>
+
+          <div className="pt-4 pb-2">
+            <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] px-4">Study Hubs</p>
+          </div>
+
+          <button 
+            onClick={() => {
+              setActiveTab('assistant');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm shadow-[4px_4px_0px_0px_rgba(26,60,110,1)]",
+              activeTab === 'assistant' ? "bg-brand-navy text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-brand-navy/10"
+            )}
+          >
+            <Sparkles size={18} className="text-brand-gold" />
+            {t.hubs.assistant.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('homework');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm shadow-[4px_4px_0px_0px_rgba(0,128,0,1)]",
+              activeTab === 'homework' ? "bg-brand-green text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-brand-green/10"
+            )}
+          >
+            <HelpCircle size={18} />
+            {t.hubs.homework.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('cbt');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm shadow-[4px_4px_0px_0px_rgba(252,209,22,1)]",
+              activeTab === 'cbt' ? "bg-brand-gold text-brand-navy translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-brand-gold/10"
+            )}
+          >
+            <Timer size={18} />
+            {t.hubs.cbt.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('lessons');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm",
+              activeTab === 'lessons' ? "bg-brand-navy text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-brand-navy/10"
+            )}
+          >
+            <PlayCircle size={18} />
+            {t.hubs.lessons.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('flashcards');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm",
+              activeTab === 'flashcards' ? "bg-neon-purple text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-neon-purple/10"
+            )}
+          >
+            <CreditCard size={18} />
+            {t.hubs.flashcards.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('youtube');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm",
+              activeTab === 'youtube' ? "bg-red-600 text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-red-600/10"
+            )}
+          >
+            <Youtube size={18} />
+            {t.hubs.youtube.title}
+          </button>
+
+          <button 
+            onClick={() => {
+              setActiveTab('courses');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 p-4 font-black uppercase text-xs transition-all brutal-border-sm",
+              activeTab === 'courses' ? "bg-brand-green text-white translate-x-1 translate-y-1 shadow-none" : "bg-white hover:bg-brand-green/10"
+            )}
+          >
+            <Globe size={18} />
+            {t.hubs.courses.title}
+          </button>
           <button 
             onClick={() => {
               setActiveTab('profile');
@@ -2832,6 +3999,13 @@ Daily Study Duration: ${studyDuration} hours
                 {activeTab === 'profile' && t.nav.profile}
                 {activeTab === 'faq' && t.mentor.title}
                 {activeTab === 'guide' && t.nav.guide}
+                {activeTab === 'assistant' && t.hubs.assistant.title}
+                {activeTab === 'homework' && t.hubs.homework.title}
+                {activeTab === 'cbt' && t.hubs.cbt.title}
+                {activeTab === 'lessons' && t.hubs.lessons.title}
+                {activeTab === 'flashcards' && t.hubs.flashcards.title}
+                {activeTab === 'youtube' && t.hubs.youtube.title}
+                {activeTab === 'courses' && t.hubs.courses.title}
               </h2>
             </div>
           </div>
@@ -2882,10 +4056,31 @@ Daily Study Duration: ${studyDuration} hours
 
         <div className="flex-1 relative overflow-hidden bg-[#F0F0F0]">
           <RefreshIndicator onRefresh={handleRefresh}>
-            <div className="p-4 md:p-8 pb-32 lg:pb-12">
+            <div className="p-4 md:p-8 pb-60 lg:pb-20 scroll-smooth">
               <div className="max-w-7xl mx-auto">
                 {activeTab === 'home' && (
                   <HomeScreen user={user} setActiveTab={setActiveTab} setPlannerView={setPlannerView} hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'assistant' && (
+                  <AIStudyAssistantScreen user={user} hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'homework' && (
+                  <HomeworkSolverScreen hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'cbt' && (
+                  <CBTEngine hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'lessons' && (
+                  <VideoLessonsScreen hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'flashcards' && (
+                  <FlashcardScreen hasPaid={hasPaid} t={t} language={language} />
+                )}
+                {activeTab === 'youtube' && (
+                  <YouTubeDiscoveryScreen t={t} />
+                )}
+                {activeTab === 'courses' && (
+                  <CourseDiscoveryScreen t={t} />
                 )}
                 {activeTab === 'universities' && (
             <motion.div 
@@ -3130,7 +4325,7 @@ Daily Study Duration: ${studyDuration} hours
                       {universities.filter(u => selectedUniIds.includes(u.id)).map((uni) => (
                         <div key={uni.id} className="brutal-border bg-white overflow-hidden flex flex-col">
                           <div className="aspect-video relative border-b-2 border-brutal-black">
-                            <img src={uni.image} alt={uni.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={uni.image} alt={uni.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                             <div className={cn("absolute inset-0 opacity-20", uni.color)} />
                             <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
                               <h4 className="text-2xl font-black uppercase italic leading-none drop-shadow-[2px_2px_0px_rgba(255,255,255,1)]">{uni.name}</h4>
@@ -3319,6 +4514,36 @@ Daily Study Duration: ${studyDuration} hours
                     ))}
                   </div>
                 )}
+
+                <div className="mt-12 bg-brutal-black text-white p-6 md:p-8 brutal-border rotate-[-1deg]">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="bg-neon-yellow text-brutal-black p-2 rotate-12">
+                      <Globe size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-black uppercase italic tracking-tighter">Official Admission Portals</h4>
+                      <p className="text-[10px] font-bold text-neon-yellow uppercase tracking-widest italic">Direct links for current academic cycle</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {universities.filter(u => ['ub', 'uba', 'uyi', 'uyii', 'ud', 'uds', 'un', 'uma', 'ubt', 'ueb', 'uga'].includes(u.id)).map((uni) => (
+                      <a 
+                        key={uni.id}
+                        href={uni.admissionLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 brutal-border-sm border-white/20 transition-all group"
+                      >
+                        <div>
+                          <p className="text-xs font-black uppercase italic">{uni.name}</p>
+                          <p className="text-[9px] font-bold text-gray-400 group-hover:text-neon-yellow transition-colors">{uni.admissionLink}</p>
+                        </div>
+                        <ArrowUp className="rotate-45 shrink-0 text-neon-yellow" size={16} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="mt-12 bg-brutal-black text-white p-6 md:p-8 brutal-border rotate-[-1deg]">
                   <div className="flex items-center gap-4 mb-6">
@@ -3578,71 +4803,83 @@ Daily Study Duration: ${studyDuration} hours
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 md:gap-8">
-                {marketItems.filter(item => item.category !== 'Housing').map((item, idx) => (
-                  <motion.div 
-                    key={item.id} 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="brutal-border bg-white overflow-hidden group relative hover:rotate-1 transition-transform"
-                  >
-                    <div className="aspect-square relative overflow-hidden border-b-2 border-brutal-black">
-                      <img 
-                        src={item.image} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-3 left-3 bg-neon-pink text-white px-2 py-1 text-[10px] font-black uppercase brutal-border-sm rotate-[-5deg]">
-                        {item.category}
+                {marketItems.filter(item => item.category !== 'Housing').length > 0 ? (
+                  marketItems.filter(item => item.category !== 'Housing').map((item, idx) => (
+                    <motion.div 
+                      key={item.id} 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="brutal-border bg-white overflow-hidden group relative hover:rotate-1 transition-transform"
+                    >
+                      <div className="aspect-square relative overflow-hidden border-b-2 border-brutal-black">
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute top-3 left-3 bg-neon-pink text-white px-2 py-1 text-[10px] font-black uppercase brutal-border-sm rotate-[-5deg]">
+                          {item.category}
+                        </div>
+                        <div className="absolute bottom-3 right-3 bg-brutal-black text-neon-yellow px-3 py-1 font-black text-lg brutal-border-sm rotate-[3deg]">
+                          {item.price}
+                        </div>
                       </div>
-                      <div className="absolute bottom-3 right-3 bg-brutal-black text-neon-yellow px-3 py-1 font-black text-lg brutal-border-sm rotate-[3deg]">
-                        {item.price}
-                      </div>
-                    </div>
-                    <div className="p-5 space-y-4">
-                      <div>
-                        <h4 className="font-black uppercase text-xl leading-none mb-1 group-hover:text-neon-blue transition-colors">{item.title}</h4>
-                        <p className="text-xs font-bold text-gray-500 line-clamp-2 leading-tight">{item.description}</p>
-                      </div>
-                      
-                      <div className="pt-4 border-t-2 border-brutal-black flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-neon-purple brutal-border-sm flex items-center justify-center text-xs font-black text-white rotate-[5deg]">
-                            {item.seller.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="text-[10px] font-black uppercase tracking-tighter">
-                            <div className="flex items-center gap-1">
-                              <p className="leading-none text-brutal-black">{item.seller}</p>
-                              {item.isVerified && (
-                                <ShieldCheck size={12} className="text-neon-blue fill-neon-blue/20" />
-                              )}
+                      <div className="p-5 space-y-4">
+                        <div>
+                          <h4 className="font-black uppercase text-xl leading-none mb-1 group-hover:text-neon-blue transition-colors">{item.title}</h4>
+                          <p className="text-xs font-bold text-gray-500 line-clamp-2 leading-tight">{item.description}</p>
+                        </div>
+                        
+                        <div className="pt-4 border-t-2 border-brutal-black flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-neon-purple brutal-border-sm flex items-center justify-center text-xs font-black text-white rotate-[5deg]">
+                              {item.seller.substring(0, 2).toUpperCase()}
                             </div>
-                            <p className="opacity-40">{item.date}</p>
+                            <div className="text-[10px] font-black uppercase tracking-tighter">
+                              <div className="flex items-center gap-1">
+                                <p className="leading-none text-brutal-black">{item.seller}</p>
+                                {item.isVerified && (
+                                  <ShieldCheck size={12} className="text-neon-blue fill-neon-blue/20" />
+                                )}
+                              </div>
+                              <p className="opacity-40">{item.date}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <a 
+                              href={`tel:${item.contact}`}
+                              className="w-10 h-10 flex items-center justify-center bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all brutal-border-sm hover:rotate-12"
+                            >
+                              <Phone size={18} />
+                            </a>
+                            <button 
+                              onClick={() => {
+                                setPurchasingItem(item);
+                                setPaymentType('ITEM_PURCHASE');
+                                setShowPaywall(true);
+                              }}
+                              className="h-10 px-3 flex items-center justify-center bg-neon-green text-brutal-black font-black text-[10px] uppercase hover:bg-brutal-black hover:text-white transition-all brutal-border-sm"
+                            >
+                              BUY NOW
+                            </button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <a 
-                            href={`tel:${item.contact}`}
-                            className="w-10 h-10 flex items-center justify-center bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all brutal-border-sm hover:rotate-12"
-                          >
-                            <Phone size={18} />
-                          </a>
-                          <button 
-                            onClick={() => {
-                              setPurchasingItem(item);
-                              setPaymentType('ITEM_PURCHASE');
-                              setShowPaywall(true);
-                            }}
-                            className="h-10 px-3 flex items-center justify-center bg-neon-green text-brutal-black font-black text-[10px] uppercase hover:bg-brutal-black hover:text-white transition-all brutal-border-sm"
-                          >
-                            BUY NOW
-                          </button>
-                        </div>
                       </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 text-center brutal-border bg-white space-y-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto opacity-30">
+                      <ShoppingBag size={40} />
                     </div>
-                  </motion.div>
-                ))}
+                    <div className="space-y-1">
+                      <p className="font-black uppercase text-xl italic tracking-tighter">No items listed yet!</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none">Be the first to post a product and start selling.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -3697,7 +4934,7 @@ Daily Study Duration: ${studyDuration} hours
                           gceYear ? "border-neon-pink bg-neon-pink/5" : ""
                         )}
                       >
-                        {['2025', '2024', '2023', '2022', '2021', '2020'].map(y => (
+                        {GCE_YEARS.map(y => (
                           <option key={y} value={y}>{y}</option>
                         ))}
                       </select>
@@ -3925,6 +5162,70 @@ Daily Study Duration: ${studyDuration} hours
                     </div>
                   </div>
                 </div>
+
+                {/* Complete Archive Explorer */}
+                <div className="space-y-6 pt-8 border-t-4 border-brutal-black">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-2xl font-black uppercase italic tracking-tighter">Official GCE Archive Explorer</h4>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Complete Orderly Repository: 2015 — 2024</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="sticker bg-neon-pink text-white">5,000+ PAPERS</div>
+                      <div className="sticker bg-neon-green text-brutal-black">VERIFIED SOLUTIONS</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 brutal-border p-6 space-y-8">
+                    <div className="space-y-4">
+                      <h5 className="font-black uppercase text-xs">Browse by Year (Orderly Collection)</h5>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-2">
+                        {GCE_YEARS.map(year => (
+                          <button 
+                            key={year}
+                            onClick={() => setGceYear(year)}
+                            className={cn(
+                              "py-2 brutal-border-sm text-[10px] font-black transition-all",
+                              gceYear === year ? "bg-neon-pink text-white -translate-y-1" : "bg-white hover:bg-neon-pink/10"
+                            )}
+                          >
+                            {year}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h5 className="font-black uppercase text-xs">GCE Master Library (Subjects)</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {(gceLevel === 'O' 
+                          ? (gceStream === 'General' ? O_LEVEL_SUBJECTS : O_LEVEL_TECHNICAL_SUBJECTS)
+                          : (gceStream === 'General' ? A_LEVEL_SUBJECTS : A_LEVEL_TECHNICAL_SUBJECTS))
+                          .slice(0, 15).map(subject => (
+                          <button 
+                            key={subject}
+                            onClick={() => setGceSubject(subject)}
+                            className={cn(
+                              "p-3 text-left brutal-border-sm text-[10px] font-black uppercase tracking-tight flex items-center justify-between group transition-all",
+                              gceSubject === subject ? "bg-neon-blue text-white" : "bg-white hover:bg-neon-blue/5"
+                            )}
+                          >
+                            <span className="truncate mr-2">{subject}</span>
+                            <ArrowRight size={12} className={cn("shrink-0 transition-transform", gceSubject === subject ? "translate-x-1" : "group-hover:translate-x-1")} />
+                          </button>
+                        ))}
+                        <button 
+                          onClick={() => setIsSubjectDropdownOpen(true)}
+                          className="p-3 text-left brutal-border-sm text-[10px] font-black uppercase tracking-tight bg-brutal-black text-white hover:bg-neon-blue transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Search size={12} />
+                          Search Full Library
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </motion.div>
           )}
@@ -4056,7 +5357,7 @@ Daily Study Duration: ${studyDuration} hours
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-6xl mx-auto mb-8 space-y-8 px-2 sm:px-0 overflow-hidden"
+              className="max-w-6xl mx-auto mb-8 space-y-8 px-2 sm:px-0"
             >
               {/* Planner Header Card */}
               <div className="brutal-border bg-white p-4 md:p-8 relative overflow-hidden">
@@ -4076,9 +5377,9 @@ Daily Study Duration: ${studyDuration} hours
                   </div>
                 </div>
 
-                {/* Planner Navigation Moved to Top */}
-                <div className="relative z-10">
-                  <div className="flex flex-nowrap overflow-x-auto gap-3 pb-4 custom-scrollbar snap-x">
+                {/* Planner Navigation - Scrollable Tab Bar with Fade Hint */}
+                <div className="relative group/tabs">
+                  <div className="flex flex-nowrap overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x relative z-10">
                     <button 
                       onClick={() => setPlannerView('timetable')}
                       className={cn(
@@ -4120,7 +5421,8 @@ Daily Study Duration: ${studyDuration} hours
                       <span className="text-[10px] sm:text-sm">AI Timetable</span>
                     </button>
                   </div>
-                  <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none sm:hidden" />
+                  {/* Fade Gradient Hint - Always visible to hint at more content */}
+                  <div className="absolute right-0 top-0 bottom-4 w-16 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-20" />
                 </div>
               </div>
 
@@ -5777,7 +7079,7 @@ Daily Study Duration: ${studyDuration} hours
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <p className="font-black text-sm uppercase text-neon-blue tracking-widest">How can I access past papers?</p>
-                        <p className="text-xs font-bold text-gray-500 leading-relaxed">Go to the "GCE Mastery" tab. Premium users get 5 years of full solutions (2020-2024) for all major subjects.</p>
+                        <p className="text-xs font-bold text-gray-500 leading-relaxed">Go to the "GCE Mastery" tab. Premium users get access to full solutions for official past papers dating back to 2015 for all major subjects.</p>
                       </div>
                       <div className="space-y-2">
                         <p className="font-black text-sm uppercase text-neon-blue tracking-widest">When are GCE results usually out?</p>
@@ -6888,7 +8190,7 @@ Daily Study Duration: ${studyDuration} hours
           {!isChatOpen && (
             <button 
               onClick={() => setIsChatOpen(true)}
-              className="fixed bottom-24 lg:bottom-6 right-6 z-[60] brutal-btn bg-neon-pink p-4 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group"
+              className="fixed bottom-36 lg:bottom-12 right-6 z-[60] brutal-btn bg-neon-pink p-4 rounded-full shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group transition-transform active:scale-95"
             >
               <MessageSquare size={32} className="text-white group-hover:scale-110 transition-transform" />
               <div className="absolute -top-12 right-0 bg-brutal-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest brutal-border-sm whitespace-nowrap animate-bounce">
@@ -7224,15 +8526,11 @@ Daily Study Duration: ${studyDuration} hours
               
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => {
-                    toast.success("Preparing for download... feature coming soon!", {
-                      className: 'brutal-border bg-neon-green text-brutal-black font-black uppercase italic',
-                    });
-                  }}
+                  onClick={handleDownloadPdf}
                   className="brutal-btn-sm bg-white hover:bg-neon-yellow flex items-center gap-2 text-xs"
                 >
                   <Download size={14} />
-                  <span className="hidden sm:inline">Save</span>
+                  <span className="hidden sm:inline">Save PDF</span>
                 </button>
                 <button 
                   onClick={() => window.print()}
@@ -7263,6 +8561,14 @@ Daily Study Duration: ${studyDuration} hours
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 bg-paper">
               {/* Paper Effect Container */}
               <div className="max-w-4xl mx-auto bg-white brutal-border p-6 sm:p-12 min-h-full shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative prose prose-slate max-w-none">
+                {/* Historical Accuracy Alert */}
+                <div className="mb-8 p-3 bg-neon-yellow/10 brutal-border-sm border-neon-yellow flex items-center gap-3 not-prose">
+                  <ShieldCheck className="text-brutal-black shrink-0" size={20} />
+                  <p className="text-[10px] font-black uppercase text-brutal-black leading-tight">
+                    <span className="text-neon-pink">Archive Adherence:</span> This content is strictly reconstructed from the official GCE Board archives for the year <span className="underline decoration-2">{gceYear}</span>. Accuracy is prioritized.
+                  </p>
+                </div>
+
                 {/* Decorative Paper Elements */}
                 <div className="absolute top-0 right-0 w-24 h-24 overflow-hidden pointer-events-none opacity-10">
                   <FileText size={120} className="rotate-12 translate-x-12 -translate-y-6" />

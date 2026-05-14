@@ -12,7 +12,7 @@ Core Persona Traits:
 
 Core Knowledge & Capabilities:
 1. Academic Strategy: Expert in Cameroonian series (S1, S2, S3, Arts, Technical) and trades. You know the entry requirements for top institutions (UB, UBa, UY1, UDM, CUIB, etc.) and the specific "Concours" culture.
-2. GCE/BACC Mastery: Provide step-by-step solutions for Cameroon GCE O-Level and A-Level past papers. Use "Exam-Winning Techniques" and focus on marking scheme optimization.
+2. GCE/BACC Mastery: Provide absolute verbatim reproductions of Cameroon GCE and BACC past papers and marking schemes. When tasked with official examination papers, accuracy and completeness are paramount; you MUST act as a high-fidelity record-keeper. Do not summarize, truncate, or paraphrase the official text. Use search tools to verify historical exactness.
 3. Career Mapping: Explain the "becoming" of a student—what job titles they will hold, what their daily life will look like, and which universities (local and global) will get them there.
 4. Global Admissions Hub: Guide students on international standardized tests (IELTS, SAT, TestDaF) and scholarship processes (DAAD, Commonwealth, Mastercard).
 5. Student-Preneurship: Suggest low-capital side hustles viable in student hubs like Molyko or Bambili, always considering the local economic reality.
@@ -27,7 +27,14 @@ Safety:
 - Encourage mental health awareness.
 - Never promote academic dishonesty.`;
 
-export async function generateResponseStream(prompt: string, history: { role: string; parts: any[] }[] = [], userProfile?: any, image?: { data: string; mimeType: string }) {
+export async function generateResponseStream(
+  prompt: string, 
+  history: { role: string; parts: any[] }[] = [], 
+  userProfile?: any, 
+  image?: { data: string; mimeType: string },
+  tools?: any[],
+  customSystemInstruction?: string
+) {
   const profileContext = userProfile && (userProfile.name || userProfile.academicHistory || userProfile.desiredField || userProfile.preferredUniversities || userProfile.careerInterests)
     ? `\n\n[USER PROFILE CONTEXT]\nName: ${userProfile.name}\nAcademic History: ${userProfile.academicHistory}\nDesired Field: ${userProfile.desiredField}\nPreferred Universities: ${userProfile.preferredUniversities}\nCareer Interests: ${userProfile.careerInterests}\n\nPlease use this profile information to provide more personalized and relevant advice.`
     : '';
@@ -49,10 +56,40 @@ export async function generateResponseStream(prompt: string, history: { role: st
       { role: 'user', parts: userParts }
     ],
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: customSystemInstruction || SYSTEM_INSTRUCTION,
       temperature: 0.7,
       topP: 0.95,
       topK: 40,
+      tools: tools,
+    },
+  });
+
+  return response;
+}
+
+export async function generateProResponseStream(
+  prompt: string, 
+  history: { role: string; parts: any[] }[] = [], 
+  userProfile?: any, 
+  tools?: any[]
+) {
+  const profileContext = userProfile && (userProfile.name || userProfile.academicHistory || userProfile.desiredField || userProfile.preferredUniversities || userProfile.careerInterests)
+    ? `\n\n[USER PROFILE CONTEXT]\nName: ${userProfile.name}\nAcademic History: ${userProfile.academicHistory}\nDesired Field: ${userProfile.desiredField}\nPreferred Universities: ${userProfile.preferredUniversities}\nCareer Interests: ${userProfile.careerInterests}\n\nPlease use this profile information to provide more personalized and relevant advice.`
+    : '';
+
+  const response = await ai.models.generateContentStream({
+    model: "gemini-3.1-pro-preview",
+    contents: [
+      ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
+      { role: 'user', parts: [{ text: prompt + profileContext }] }
+    ],
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.1, // Near-zero temperature for absolute factual accuracy and verbatim reproduction
+      topP: 0.95,
+      topK: 40,
+      tools: tools,
+      maxOutputTokens: 8192, // Ensure long papers are not truncated
     },
   });
 
@@ -67,7 +104,7 @@ export async function generateMorningPlug() {
       systemInstruction: SYSTEM_INSTRUCTION,
     },
   });
-  return response.text;
+  return response.text || "";
 }
 
 export async function verifyMarketImage(imageData: string, mimeType: string): Promise<{ isAppropriate: boolean; reason?: string }> {
